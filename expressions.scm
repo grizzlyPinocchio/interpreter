@@ -41,17 +41,33 @@
 
 ;Procedure Application
 
+(define primitive-procedures (list '* '+ '- '/ '> '< '=))
+
 (define (expr-to-args expr) (cdr expr))
 
 (define (proc-name expr) (car expr))
+
+(define (primitive-proc? proc)
+    (fold-right (lambda (curr prev) (or curr prev)) 
+                #F 
+                (map (lambda (primitive) (equal? primitive proc))
+                     primitive-procedures)))
+
+(define (apply-primitive proc args)
+    ;(newline)
+    ;(display "PRIMITIVE-PROC: ") (display proc) (display "SCHEME-EVAL: ")
+    ;(display (eval proc system-global-environment))
+    (apply (eval proc system-global-environment) args))
+
+(define (compound-proc? proc) (tagged-list? proc 'lambda))
 
 ;While
 
 (define (while? expr) (tagged-list? expr 'while))
 
-(define (halt-lambda-of expr) (make-lambda '() (cadr expr)))
+(define (halt-lambda-of expr) (make-lambda-no-env '() (cadr expr)))
 
-(define (exec-lambda-of expr) (make-lambda '() (caddr expr)))
+(define (exec-lambda-of expr) (make-lambda-no-env '() (caddr expr)))
 
 ;Variables
 (define (variable? expr) (symbol? expr))
@@ -68,6 +84,9 @@
           ((equal? expr '+) True)
           ((equal? expr '-) True)
           ((equal? expr '/) True)
+          ((equal? expr '>) True)
+          ((equal? expr '<) True) 
+          ((equal? expr '=) True)
           (else False)))
 
 (define (do-primitive expr) expr)
@@ -98,7 +117,7 @@
 ;returns ARGS in ((lambda (x) (body)) ARGS) 
 (define (lambda-to-args expr) (cdr expr))
 
-(define (make-lambda args body) (list 'lambda args body))
+(define (make-lambda-no-env args body) (list 'lambda args body))
 
 ;Application
 
@@ -106,3 +125,11 @@
     (and (pair? expr) 
          (or (symbol? (car expr))
              (lambda? (car expr)))))
+
+;Sequence evaluation
+
+(define (empty? expr) (null? expr))
+
+(define (first-expr expr) (car expr))
+
+(define (rest-expr expr) (cdr expr))
